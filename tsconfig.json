@@ -1,4 +1,4 @@
 {
   "extends": "@athenna/tsconfig/tsconfig.app-slim.json",
-  "compilerOptions": {}
+  "compilerOptions": {},
 }

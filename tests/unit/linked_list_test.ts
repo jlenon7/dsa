@@ -42,14 +42,20 @@ export default class LinkedListTest {
     linkedList.append(2)
     linkedList.append(3)
 
+    assert.deepEqual(linkedList.get(1).value, 2)
+    assert.deepEqual(linkedList.get(1).next.value, 3)
     assert.deepEqual(linkedList.toArray({ onlyValues: true }), [1, 2, 3])
 
     linkedList.delete(1)
 
+    assert.isUndefined(linkedList.get(1).next)
+    assert.deepEqual(linkedList.get(1).value, 3)
     assert.deepEqual(linkedList.toArray({ onlyValues: true }), [1, 3])
 
     linkedList.delete(1)
 
+    assert.deepEqual(linkedList.get(0).value, 1)
+    assert.isUndefined(linkedList.get(0).next)
     assert.deepEqual(linkedList.toArray({ onlyValues: true }), [1])
 
     linkedList.delete(0)
@@ -135,11 +141,13 @@ export default class LinkedListTest {
     const linkedList = new LinkedList<number>().append(1).append(3)
 
     linkedList.set(1, 2)
-    linkedList.set(4, 4)
-    linkedList.set(0, 4)
+    linkedList.set(4, 3)
+    linkedList.set(2, 3)
+    linkedList.set(0, 1)
     linkedList.set(9999, 4)
+    linkedList.set(99999, 5)
 
-    assert.deepEqual(linkedList.toArray({ onlyValues: true }), [4, 2, 4, 4])
+    assert.deepEqual(linkedList.toArray({ onlyValues: true }), [1, 2, 3, 4, 5])
   }
 
   @Test()
@@ -147,14 +155,17 @@ export default class LinkedListTest {
     const linkedList = new LinkedList<number>().append(1).append(3)
 
     linkedList.set(1, 2)
-    linkedList.set(4, 4)
-    linkedList.set(0, 4)
+    linkedList.set(4, 3)
+    linkedList.set(2, 3)
+    linkedList.set(0, 1)
     linkedList.set(9999, 4)
+    linkedList.set(99999, 5)
 
-    assert.deepEqual(linkedList.get(0)?.value, 4)
+    assert.deepEqual(linkedList.get(0)?.value, 1)
     assert.deepEqual(linkedList.get(1)?.value, 2)
-    assert.deepEqual(linkedList.get(2)?.value, 4)
+    assert.deepEqual(linkedList.get(2)?.value, 3)
     assert.deepEqual(linkedList.get(3)?.value, 4)
+    assert.deepEqual(linkedList.get(4)?.value, 5)
     assert.isUndefined(linkedList.get(5))
   }
 

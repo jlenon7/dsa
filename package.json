@@ -5,17 +5,16 @@
   "engines": {
     "node": ">=23.0.0"
   },
-  "scripts": {
-    "lint:fix": ""
-  },
   "type": "module",
   "imports": {
-    "#src/*": "./src/*.ts",
-    "#src": "./src/index.ts",
-    "#bin/*": "./bin/*.ts",
-    "#bin": "./bin/index.ts",
-    "#tests/*": "./tests/*.ts",
-    "#tests": "./tests/index.ts"
+    "#src/*": "./src/*.js",
+    "#src": "./src/index.js",
+    "#src/doubly_linked_list": "./src/doubly_linked_list/index.js",
+    "#src/linked_list": "./src/linked_list/index.js",
+    "#bin/*": "./bin/*.js",
+    "#bin": "./bin/index.js",
+    "#tests/*": "./tests/*.js",
+    "#tests": "./tests/index.js"
   },
   "dependencies": {
     "@athenna/common": "^5.10.0",

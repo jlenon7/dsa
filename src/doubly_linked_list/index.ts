@@ -1,10 +1,22 @@
+import { Node } from './node.js'
 import { Color, Options } from '@athenna/common'
-import { Node } from '#src/helpers/node'
+import type { Position, TraverseClosure } from './types.js'
 
-export class LinkedList<T = any> {
+export class DoublyLinkedList<T = any> {
+  /**
+   * Stores the first node of the list.
+   */
   private head: Node<T>
+
+  /**
+   * Stores the last node of the list.
+   */
   private tail: Node<T>
-  private length: number = 0
+
+  /**
+   * Stores the size of the list.
+   */
+  private length = 0
 
   /**
    * Return the size of the linked list.
@@ -56,7 +68,7 @@ export class LinkedList<T = any> {
 
     /**
      * If old node doesn't exist, it means that the
-     * index provided is exceding the size of the list,
+     * index provided is exceeding the size of the list,
      * in this case, just append the value to the end
      * of the list.
      */
@@ -68,7 +80,7 @@ export class LinkedList<T = any> {
 
     /**
      * If the node in the current index provided doesn't
-     * exist, it means that the index provided is exceding
+     * exist, it means that the index provided is exceeding
      * the size of the list, in this case, just append the
      * value to the end of the list.
      */
@@ -76,7 +88,12 @@ export class LinkedList<T = any> {
       return this.append(value)
     }
 
-    const node = new Node(value, curNode?.next)
+    /**
+     * Create the new node defining the next as the next
+     * node of the current and the previous as the old
+     * node.
+     */
+    const node = new Node(value, curNode?.next, oldNode)
 
     oldNode.next = node
 
@@ -118,7 +135,7 @@ export class LinkedList<T = any> {
        * Define the head node as the next node or
        * undefined if it doesn't exist.
        */
-      this.head = this.head?.next!
+      this.head = this.head?.next as any
 
       /**
        * If head doesn't exist, also update the tail
@@ -142,7 +159,7 @@ export class LinkedList<T = any> {
     /**
      * If old node or the node in the current index
      * provided doesn't exist, it means that the
-     * index provided is exceding the size of the
+     * index provided is exceeding the size of the
      * list, in this case, do nothing.
      */
     if (!oldNode || !curNode) {
@@ -151,17 +168,27 @@ export class LinkedList<T = any> {
 
     this.length--
 
-    oldNode.next = curNode.next
+    const nextNode = curNode.next
+
+    oldNode.next = nextNode
 
     /**
-     * If the next value of the current node is
+     * If the next node of the current node is
      * undefined, it means that current node was
      * the tail of the list, in this case we need
      * to update the tail to be the old node.
      */
-    if (!oldNode.next) {
+    if (!nextNode) {
       this.tail = oldNode
+
+      return this
     }
+
+    /**
+     * Update the previous node of next node to point
+     * to the old node.
+     */
+    nextNode.previous = oldNode
 
     return this
   }
@@ -190,6 +217,12 @@ export class LinkedList<T = any> {
     this.tail.next = node
 
     /**
+     * Update the previous value of the node with
+     * the old tail node.
+     */
+    node.previous = this.tail
+
+    /**
      * Define the new tail.
      */
     this.tail = node
@@ -215,6 +248,15 @@ export class LinkedList<T = any> {
       return this
     }
 
+    /**
+     * Update the previous node of the head to
+     * point to the new node being inserted.
+     */
+    this.head.previous = node
+
+    /**
+     * Update the head to become the new node.
+     */
     this.head = node
 
     return this
@@ -226,42 +268,46 @@ export class LinkedList<T = any> {
    * Time complexity: O(n)
    * Space complexity: O(1)
    */
-  public contains(value: T) {
-    return !!this.find(node => node.value === value)
+  public contains(value: T, pos?: Position) {
+    return !!this.find(node => node.value === value, pos)
   }
 
   /**
-   * Traverse the linked list running a closure for each
-   * element. This method will create and return a new linked
-   * list, if you want to modify the values in the current
-   * linked list instance, use the `traverse()` method.
+   * Traverse the doubly linked list starting from the head by default.
+   * It will run the defined closure for each node found. This method
+   * will create and return a new doubly linked list, if you want to
+   * modify the values in the current list instance, use the `traverse()`.
    *
    * Time complexity: O(n)
-   * Space complexity: O(n)
+   * Space complexity: O(1)
    */
-  public map<R = any>(closure: (node: Node<T>, index?: number) => R) {
+  public map<R = any>(closure: TraverseClosure<T, R>, pos?: Position) {
+    if (!pos) pos = 'start'
+
     let index = 0
-    let node: Node<T> | undefined = this.head
-    const linkedList = new LinkedList<R>()
+    let node: Node<T> | undefined = pos === 'start' ? this.head : this.tail
+    const doublyLinkedList = new DoublyLinkedList<R>()
 
     while (node) {
-      linkedList.append(closure(node, index))
+      doublyLinkedList.append(closure(node, index))
 
       index++
-      node = node.next
+      node = pos === 'start' ? node.next : node.previous
     }
 
-    return linkedList
+    return doublyLinkedList
   }
 
   /**
-   * Traverse the linked list joining values of nodes
-   * using the defined separator.
+   * Traverse the linked list joining values of nodes using the defined
+   * separator. By default starts in the head of the list.
    *
    * Time complexity: O(n)
    * Space complexity: O(n)
    */
-  public join(separator: string) {
+  public join(separator: string, pos?: Position) {
+    if (!pos) pos = 'start'
+
     let string = ''
 
     this.traverse((node, i) => {
@@ -272,22 +318,25 @@ export class LinkedList<T = any> {
       }
 
       string += `${separator}${node.value}`
-    })
+    }, pos)
 
     return string
   }
 
   /**
-   * Traverse the linked list running a closure in each
-   * node value. It stops and return the node when the
-   * closure return a truffy value for the first time.
+   * Traverse the linked list running a closure in each node value.
+   * It stops and return the node when the closure return a truffy
+   * value for the first time. By default starts in the head of the
+   * list.
    *
    * Time complexity: O(n)
    * Space complexity: O(1)
    */
-  public find(closure: (node: Node<T>, index?: number) => any) {
+  public find(closure: TraverseClosure<T>, pos?: Position) {
+    if (!pos) pos = 'start'
+
     let index = 0
-    let node: Node<T> | undefined = this.head
+    let node: Node<T> | undefined = pos === 'start' ? this.head : this.tail
 
     while (node) {
       if (closure(node, index)) {
@@ -295,27 +344,30 @@ export class LinkedList<T = any> {
       }
 
       index++
-      node = node.next
+      node = pos === 'start' ? node.next : node.previous
     }
 
     return node
   }
 
   /**
-   * Traverse the linked list running a closure for each node.
+   * Traverse the doubly linked list starting from the head by default.
+   * It will run the defined closure for each node found.
    *
    * Time complexity: O(n)
    * Space complexity: O(1)
    */
-  public traverse(closure: (node: Node<T>, index?: number) => any) {
+  public traverse(closure: TraverseClosure<T>, pos?: Position) {
+    if (!pos) pos = 'start'
+
     let index = 0
-    let node: Node<T> | undefined = this.head
+    let node: Node<T> | undefined = pos === 'start' ? this.head : this.tail
 
     while (node) {
       closure(node, index)
 
       index++
-      node = node.next
+      node = pos === 'start' ? node.next : node.previous
     }
 
     return this
@@ -327,8 +379,8 @@ export class LinkedList<T = any> {
    * Time complexity: O(n)
    * Space complexity: O(1)
    */
-  public forEach(closure: (node: Node<T>, index?: number) => any) {
-    return this.traverse(closure)
+  public forEach(closure: TraverseClosure<T>, pos?: Position) {
+    return this.traverse(closure, pos)
   }
 
   /**
@@ -337,12 +389,14 @@ export class LinkedList<T = any> {
    * Time complexity: O(n)
    * Space complexity: O(n)
    */
-  public reverse() {
-    const reversedLinkedList = new LinkedList<T>()
+  public reverse(pos?: Position) {
+    if (!pos) pos = 'start'
 
-    this.forEach(node => reversedLinkedList.prepend(node.value))
+    const reversedDoublyLinkedList = new DoublyLinkedList<T>()
 
-    return reversedLinkedList
+    this.forEach(node => reversedDoublyLinkedList.prepend(node.value), pos)
+
+    return reversedDoublyLinkedList
   }
 
   public toArray(options: { onlyValues: true }): T[]
@@ -381,6 +435,6 @@ export class LinkedList<T = any> {
   public toString() {
     const nodes = this.map(node => node.toString()).join(', ')
 
-    return `${Color.yellow('LinkedList[')}${nodes}${Color.yellow(']')}`
+    return `${Color.yellow('DoublyLinkedList[')}${nodes}${Color.yellow(']')}`
   }
 }
